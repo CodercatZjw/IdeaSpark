@@ -9,6 +9,8 @@ router.get('/:ideaId', (req, res) => {
 
 router.put('/:ideaId', (req, res) => {
   const { feasibility, impact, innovation, passion } = req.body;
+  const idea = db.prepare('SELECT id FROM ideas WHERE id = ?').get(req.params.ideaId);
+  if (!idea) return res.status(404).json({ error: 'Idea not found' });
   const existing = db.prepare('SELECT * FROM idea_scores WHERE idea_id = ?').get(req.params.ideaId);
   if (existing) {
     db.prepare('UPDATE idea_scores SET feasibility=?, impact=?, innovation=?, passion=? WHERE idea_id=?')

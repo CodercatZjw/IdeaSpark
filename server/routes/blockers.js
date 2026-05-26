@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
   const params = [];
   if (project_id) { sql += ' AND project_id=?'; params.push(project_id); }
   if (resolved !== undefined) { sql += ' AND resolved=?'; params.push(resolved); }
-  sql += ' ORDER BY CASE severity WHEN "blocking" THEN 0 WHEN "large" THEN 1 WHEN "medium" THEN 2 ELSE 3 END, created_at DESC';
+  sql += " ORDER BY CASE severity WHEN 'blocking' THEN 0 WHEN 'large' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, created_at DESC";
   res.json(db.prepare(sql).all(...params));
 });
 
