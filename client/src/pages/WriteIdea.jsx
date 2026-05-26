@@ -12,7 +12,7 @@ export default function WriteIdea() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
@@ -30,12 +30,14 @@ export default function WriteIdea() {
     if (t && !tags.includes(t)) { setTags([...tags, t]); setTagInput(''); }
   };
 
-  const handleKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } };
+  const handleTagKey = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    setLoading(true);
+    setSaving(true);
     const data = { title: title.trim(), content, date, tags };
     if (isEdit) {
       await updateIdea(id, data);
@@ -53,11 +55,14 @@ export default function WriteIdea() {
 
   return (
     <div>
-      <div className="row-between" style={{ marginBottom: 24 }}>
-        <h1 className="section-title" style={{ margin: 0 }}>{isEdit ? '编辑想法' : '记录新想法'}</h1>
+      <div className="row-between" style={{ marginBottom: 32 }}>
+        <div>
+          <p className="section-label">{isEdit ? '编辑' : '记录'}</p>
+          <h1 className="section-title">{isEdit ? '编辑想法' : '新想法'}</h1>
+        </div>
         <div className="row">
           {isEdit && <button className="btn btn-danger btn-sm" onClick={handleDelete}>删除</button>}
-          <button className="btn btn-outline btn-sm" onClick={() => navigate('/history')}>取消</button>
+          <button className="btn btn-outline btn-sm" onClick={() => navigate(-1)}>取消</button>
         </div>
       </div>
 
@@ -84,19 +89,23 @@ export default function WriteIdea() {
           <label>标签</label>
           <div className="row" style={{ marginBottom: 8 }}>
             {tags.map(t => (
-              <span key={t} className="chip selected">{t} <span style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => setTags(tags.filter(x => x !== t))}>&times;</span></span>
+              <span key={t} className="chip selected">
+                {t}
+                <span style={{ cursor: 'pointer', marginLeft: 6, opacity: 0.7 }}
+                  onClick={() => setTags(tags.filter(x => x !== t))}>&times;</span>
+              </span>
             ))}
           </div>
           <div className="row">
-            <input className="form-input" style={{ maxWidth: 200 }} value={tagInput}
-              onChange={e => setTagInput(e.target.value)} onKeyDown={handleKeyDown}
+            <input className="form-input" style={{ maxWidth: 220 }} value={tagInput}
+              onChange={e => setTagInput(e.target.value)} onKeyDown={handleTagKey}
               placeholder="输入标签按回车..." />
             <button type="button" className="btn btn-outline btn-sm" onClick={addTag}>添加</button>
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {isEdit ? '保存修改' : '记录想法'}
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? '保存中...' : isEdit ? '保存修改' : '记录想法'}
         </button>
       </form>
     </div>
