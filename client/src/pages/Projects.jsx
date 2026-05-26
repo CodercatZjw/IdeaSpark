@@ -1,38 +1,33 @@
 import { useState, useEffect } from 'react';
-import { fetchProjects, createProject, updateProject, deleteProject, updateChecklist, fetchIdeas } from '../api';
-import StandupLog from '../components/StandupLog';
-import BlockerBoard from '../components/BlockerBoard';
-import TimelinePlanner from '../components/TimelinePlanner';
-import CompetitorPanel from '../components/CompetitorPanel';
-import SharePanel from '../components/SharePanel';
+import { fetchProjects, createProject, updateProject, deleteProject, fetchIdeas } from '../api';
+import ProjectCard from '../components/ProjectCard';
 
 const STATUSES = ['planning', 'building', 'submitted', 'done'];
 const STATUS_LABELS = { planning: '规划中', building: '开发中', submitted: '已提交', done: '已完成' };
-
-function formatCountdown(deadline) {
-  if (!deadline) return null;
-  const diff = new Date(deadline).getTime() - Date.now();
-  if (diff <= 0) return '已截止';
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  return `${days}天 ${hours}小时`;
-}
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [expandedProject, setExpandedProject] = useState(null);
   const [allIdeas, setAllIdeas] = useState([]);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [hackathonName, setHackathonName] = useState('');
+  const [theme, setTheme] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [deadline, setDeadline] = useState('');
   const [status, setStatus] = useState('planning');
   const [memberInput, setMemberInput] = useState('');
   const [teamMembers, setTeamMembers] = useState([]);
   const [techInput, setTechInput] = useState('');
   const [techStack, setTechStack] = useState([]);
+  const [repoUrl, setRepoUrl] = useState('');
+  const [figmaUrl, setFigmaUrl] = useState('');
+  const [devpostUrl, setDevpostUrl] = useState('');
+  const [submissionUrl, setSubmissionUrl] = useState('');
+  const [prizeInput, setPrizeInput] = useState('');
+  const [prizes, setPrizes] = useState([]);
   const [selectedIdeas, setSelectedIdeas] = useState([]);
 
   const load = async () => {
@@ -44,15 +39,23 @@ export default function Projects() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setName(''); setDescription(''); setDeadline(''); setStatus('planning');
+    setName(''); setDescription(''); setHackathonName(''); setTheme('');
+    setStartTime(''); setDeadline(''); setStatus('planning');
     setMemberInput(''); setTeamMembers([]); setTechInput(''); setTechStack([]);
-    setSelectedIdeas([]); setEditingId(null); setShowForm(false);
+    setRepoUrl(''); setFigmaUrl(''); setDevpostUrl(''); setSubmissionUrl('');
+    setPrizeInput(''); setPrizes([]); setSelectedIdeas([]);
+    setEditingId(null); setShowForm(false);
   };
 
   const openEdit = (p) => {
-    setName(p.name); setDescription(p.description); setDeadline(p.deadline || '');
+    setName(p.name); setDescription(p.description);
+    setHackathonName(p.hackathon_name || ''); setTheme(p.theme || '');
+    setStartTime(p.start_time?.slice(0, 16) || ''); setDeadline(p.deadline?.slice(0, 16) || '');
     setStatus(p.status); setTeamMembers(p.team_members || []);
     setTechStack(p.tech_stack || []);
+    setRepoUrl(p.repo_url || ''); setFigmaUrl(p.figma_url || '');
+    setDevpostUrl(p.devpost_url || ''); setSubmissionUrl(p.submission_url || '');
+    setPrizes(p.prizes_targeted || []);
     setSelectedIdeas((p.ideas || []).map(i => i.id));
     setEditingId(p.id); setShowForm(true);
   };
@@ -65,32 +68,21 @@ export default function Projects() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    const data = { name: name.trim(), description, deadline: deadline || null, status, team_members: teamMembers, tech_stack: techStack, idea_ids: selectedIdeas };
+    const data = {
+      name: name.trim(), description, hackathon_name: hackathonName, theme,
+      start_time: startTime || null, deadline: deadline || null, status,
+      team_members: teamMembers, tech_stack: techStack,
+      repo_url: repoUrl, figma_url: figmaUrl, devpost_url: devpostUrl,
+      submission_url: submissionUrl, prizes_targeted: prizes, idea_ids: selectedIdeas,
+    };
     if (editingId) { await updateProject(editingId, data); } else { await createProject(data); }
     resetForm(); load();
   };
 
   const handleDelete = async (id) => {
     if (!confirm('删除这个项目？')) return;
-    await deleteProject(id); setExpandedProject(null); load();
+    await deleteProject(id); load();
   };
-
-  const toggleCheckItem = async (projectId, index) => {
-    const proj = projects.find(p => p.id === projectId);
-    const checklist = [...proj.checklist];
-    checklist[index] = { ...checklist[index], done: !checklist[index].done };
-    await updateChecklist(projectId, checklist); load();
-  };
-
-  const addCheckItem = async (projectId, text) => {
-    if (!text.trim()) return;
-    const proj = projects.find(p => p.id === projectId);
-    const checklist = [...proj.checklist, { text: text.trim(), done: false }];
-    await updateChecklist(projectId, checklist); load();
-  };
-
-  const toggleExpand = (id) => setExpandedProject(expandedProject === id ? null : id);
-  const expanded = projects.find(p => p.id === expandedProject);
 
   return (
     <div>
@@ -99,63 +91,71 @@ export default function Projects() {
         <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>新建项目</button>
       </div>
 
+      {/* Form Modal */}
       {showForm && (
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100 }} onClick={resetForm} />
-          <div className="card" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 101, width: '90%', maxWidth: 540, maxHeight: '90vh', overflow: 'auto', marginBottom: 0 }}>
-            <h2 style={{ marginBottom: 20 }}>{editingId ? '编辑项目' : '新建项目'}</h2>
+          <div className="card" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 101, width: '90%', maxWidth: 600, maxHeight: '90vh', overflow: 'auto', marginBottom: 0 }}>
+            <h2 style={{ marginBottom: 20 }}>{editingId ? '编辑项目' : '新建黑客松项目'}</h2>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>项目名称</label><input className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="项目名称..." autoFocus /></div>
-              <div className="form-group"><label>描述</label><textarea className="form-input" style={{ minHeight: 80 }} value={description} onChange={e => setDescription(e.target.value)} placeholder="项目简介..." /></div>
-              <div className="row" style={{ gap: 16 }}>
-                <div className="form-group" style={{ flex: 1 }}><label>截止日期</label><input className="form-input" type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} /></div>
-                <div className="form-group" style={{ flex: 1 }}><label>状态</label><select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>{STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
+              <div className="form-group"><label>项目名称 *</label><input className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="项目名称" autoFocus /></div>
+
+              <div className="row" style={{ gap: 12 }}>
+                <div className="form-group" style={{ flex: 1 }}><label>赛事名称</label><input className="form-input" value={hackathonName} onChange={e => setHackathonName(e.target.value)} placeholder="ETHGlobal, HackFS..." /></div>
+                <div className="form-group" style={{ flex: 1 }}><label>赛道/主题</label><input className="form-input" value={theme} onChange={e => setTheme(e.target.value)} placeholder="AI + Social Impact" /></div>
               </div>
+
+              <div className="row" style={{ gap: 12 }}>
+                <div className="form-group" style={{ flex: 1 }}><label>比赛开始</label><input className="form-input" type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
+                <div className="form-group" style={{ flex: 1 }}><label>提交截止</label><input className="form-input" type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} /></div>
+              </div>
+
+              <div className="form-group"><label>描述</label><textarea className="form-input" style={{ minHeight: 80 }} value={description} onChange={e => setDescription(e.target.value)} placeholder="项目简介..." /></div>
+
+              <div className="row" style={{ gap: 12 }}>
+                <div className="form-group" style={{ flex: 1 }}><label>状态</label><select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>{STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}</select></div>
+                <div className="form-group" style={{ flex: 1 }}><label>提交入口链接</label><input className="form-input" value={submissionUrl} onChange={e => setSubmissionUrl(e.target.value)} placeholder="https://..." /></div>
+              </div>
+
               <div className="form-group"><label>队员</label>
                 <div className="row" style={{ marginBottom: 6 }}>{teamMembers.map(m => <span key={m} className="chip selected">{m} <span style={{ cursor: 'pointer' }} onClick={() => setTeamMembers(teamMembers.filter(x => x !== m))}>&times;</span></span>)}</div>
-                <div className="row"><input className="form-input" style={{ flex: 1 }} value={memberInput} onChange={e => setMemberInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(teamMembers, setTeamMembers, memberInput, setMemberInput); } }} placeholder="队员名..." /><button type="button" className="btn btn-outline btn-sm" onClick={() => addItem(teamMembers, setTeamMembers, memberInput, setMemberInput)}>添加</button></div>
+                <div className="row"><input className="form-input" style={{ flex: 1 }} value={memberInput} onChange={e => setMemberInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(teamMembers, setTeamMembers, memberInput, setMemberInput); } }} placeholder="队员名" /><button type="button" className="btn btn-outline btn-sm" onClick={() => addItem(teamMembers, setTeamMembers, memberInput, setMemberInput)}>添加</button></div>
               </div>
+
               <div className="form-group"><label>技术栈</label>
                 <div className="row" style={{ marginBottom: 6 }}>{techStack.map(t => <span key={t} className="chip selected">{t} <span style={{ cursor: 'pointer' }} onClick={() => setTechStack(techStack.filter(x => x !== t))}>&times;</span></span>)}</div>
-                <div className="row"><input className="form-input" style={{ flex: 1 }} value={techInput} onChange={e => setTechInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(techStack, setTechStack, techInput, setTechInput); } }} placeholder="React, Node.js..." /><button type="button" className="btn btn-outline btn-sm" onClick={() => addItem(techStack, setTechStack, techInput, setTechInput)}>添加</button></div>
+                <div className="row"><input className="form-input" style={{ flex: 1 }} value={techInput} onChange={e => setTechInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(techStack, setTechStack, techInput, setTechInput); } }} placeholder="React, Node.js" /><button type="button" className="btn btn-outline btn-sm" onClick={() => addItem(techStack, setTechStack, techInput, setTechInput)}>添加</button></div>
               </div>
+
+              <div className="row" style={{ gap: 12 }}>
+                <div className="form-group" style={{ flex: 1 }}><label>GitHub 仓库</label><input className="form-input" value={repoUrl} onChange={e => setRepoUrl(e.target.value)} placeholder="https://github.com/..." /></div>
+                <div className="form-group" style={{ flex: 1 }}><label>Figma</label><input className="form-input" value={figmaUrl} onChange={e => setFigmaUrl(e.target.value)} placeholder="https://figma.com/..." /></div>
+              </div>
+              <div className="form-group"><label>Devpost</label><input className="form-input" value={devpostUrl} onChange={e => setDevpostUrl(e.target.value)} placeholder="https://devpost.com/..." /></div>
+
+              <div className="form-group"><label>目标奖项</label>
+                <div className="row" style={{ marginBottom: 6 }}>{prizes.map(p => <span key={p} style={{ fontSize: 12, padding: '2px 8px', background: 'rgba(245,158,11,0.10)', color: '#f59e0b', borderRadius: 9999 }}>{p} <span style={{ cursor: 'pointer' }} onClick={() => setPrizes(prizes.filter(x => x !== p))}>&times;</span></span>)}</div>
+                <div className="row"><input className="form-input" style={{ flex: 1 }} value={prizeInput} onChange={e => setPrizeInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(prizes, setPrizes, prizeInput, setPrizeInput); } }} placeholder="Grand Prize, Best AI Hack" /><button type="button" className="btn btn-outline btn-sm" onClick={() => addItem(prizes, setPrizes, prizeInput, setPrizeInput)}>添加</button></div>
+              </div>
+
               <div className="form-group"><label>关联想法</label>
                 <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>{allIdeas.map(idea => (<span key={idea.id} className={`chip ${selectedIdeas.includes(idea.id) ? 'selected' : ''}`} onClick={() => setSelectedIdeas(prev => prev.includes(idea.id) ? prev.filter(x => x !== idea.id) : [...prev, idea.id])}>{idea.title}</span>))}{allIdeas.length === 0 && <span style={{ fontSize: 13, color: 'var(--foreground-subtle)' }}>暂无想法</span>}</div>
               </div>
+
               <div className="row" style={{ gap: 8, marginTop: 20 }}><button type="submit" className="btn btn-primary">{editingId ? '保存修改' : '创建项目'}</button><button type="button" className="btn btn-outline" onClick={resetForm}>取消</button></div>
             </form>
           </div>
         </>
       )}
 
-      {projects.length === 0 ? (<div className="card"><div className="empty-state"><p>还没有黑客松项目</p></div></div>) : (
+      {/* Project Cards */}
+      {projects.length === 0 ? (
+        <div className="card"><div className="empty-state"><p>还没有黑客松项目</p></div></div>
+      ) : (
         <div className="grid-2">
           {projects.map(p => (
-            <div key={p.id} className="card" style={{ position: 'relative' }}>
-              <div className="row-between" style={{ marginBottom: 12 }}><h2 style={{ margin: 0 }}>{p.name}</h2><span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 9999, background: p.status === 'done' ? 'rgba(92,224,212,0.12)' : 'rgba(94,106,210,0.12)', color: p.status === 'done' ? 'var(--accent2)' : 'var(--accent-bright)' }}>{STATUS_LABELS[p.status]}</span></div>
-              {p.deadline && (<div style={{ marginBottom: 12 }}><span style={{ fontSize: 13, color: new Date(p.deadline).getTime() - Date.now() < 86400000 ? '#fc5c7c' : 'var(--foreground-subtle)', fontVariantNumeric: 'tabular-nums' }}>{formatCountdown(p.deadline)}</span></div>)}
-              {p.description && <p style={{ fontSize: 14, color: 'var(--foreground-muted)', marginBottom: 12, lineHeight: 1.6 }}>{p.description}</p>}
-              {p.team_members?.length > 0 && (<div className="row" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 4 }}>{p.team_members.map(m => <span key={m} className="tag">{m}</span>)}</div>)}
-              {p.tech_stack?.length > 0 && (<div className="row" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 4 }}>{p.tech_stack.map(t => <span key={t} className="keyword-badge" style={{ padding: '2px 10px', fontSize: 12 }}>{t}</span>)}</div>)}
-              {p.ideas?.length > 0 && (<div style={{ marginBottom: 12 }}><span style={{ fontSize: 12, color: 'var(--foreground-subtle)' }}>关联想法：</span>{p.ideas.map(i => <span key={i.id} className="tag" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--foreground-muted)' }}>{i.title}</span>)}</div>)}
-              <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 12, marginTop: 8 }}>
-                {p.checklist.map((item, i) => (<div key={i} className="row" style={{ gap: 8, marginBottom: 6 }}><input type="checkbox" checked={item.done} onChange={() => toggleCheckItem(p.id, i)} style={{ accentColor: 'var(--accent)' }} /><span style={{ fontSize: 13, color: item.done ? 'var(--foreground-subtle)' : 'var(--foreground)', textDecoration: item.done ? 'line-through' : 'none', flex: 1 }}>{item.text}</span></div>))}
-                <form onSubmit={e => { e.preventDefault(); addCheckItem(p.id, e.target.elements.check.value); e.target.elements.check.value = ''; }} className="row" style={{ gap: 6, marginTop: 4 }}><input name="check" className="form-input" style={{ flex: 1, padding: '6px 10px', fontSize: 13 }} placeholder="添加待办..." /><button type="submit" className="btn btn-outline btn-sm">+</button></form>
-              </div>
-              <div className="row" style={{ gap: 6, marginTop: 12 }}><button className="btn btn-outline btn-sm" onClick={() => openEdit(p)}>编辑</button><button className="btn btn-primary btn-sm" onClick={() => toggleExpand(p.id)}>{expandedProject === p.id ? '收起' : '展开'}</button><button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>删除</button></div>
-            </div>
+            <ProjectCard key={p.id} project={p} onEdit={openEdit} onDelete={handleDelete} />
           ))}
-        </div>
-      )}
-
-      {expanded && (
-        <div style={{ marginTop: 24 }}>
-          <div className="row-between" style={{ marginBottom: 20 }}><h2 style={{ color: 'var(--foreground)', margin: 0 }}>{expanded.name} — 详细视图</h2><button className="btn btn-outline btn-sm" onClick={() => setExpandedProject(null)}>收起</button></div>
-          <TimelinePlanner projectId={expanded.id} projectDeadline={expanded.deadline} />
-          <StandupLog projectId={expanded.id} />
-          <BlockerBoard projectId={expanded.id} />
-          <CompetitorPanel projectId={expanded.id} />
-          <SharePanel type="project" data={expanded} />
         </div>
       )}
     </div>

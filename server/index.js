@@ -19,6 +19,11 @@ app.use('/api/snippets', require('./routes/snippets'));
 app.use('/api/api-tools', require('./routes/api-tools'));
 app.use('/api/tech-stacks', require('./routes/tech-stacks'));
 app.use('/api/more', require('./routes/more'));
+app.use('/api/projects/:projectId/roles', require('./routes/team-roles'));
+app.use('/api/projects/:projectId/links', require('./routes/resource-links'));
+app.use('/api/projects/:projectId/judging', require('./routes/judging'));
+app.use('/api/projects/:projectId/retro', require('./routes/retrospectives'));
+app.use('/api/projects/:projectId/events', require('./routes/events'));
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

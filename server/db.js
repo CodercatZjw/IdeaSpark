@@ -30,11 +30,23 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
+    hackathon_name TEXT DEFAULT '',
+    theme TEXT DEFAULT '',
+    start_time TEXT,
     deadline TEXT,
     status TEXT DEFAULT 'planning',
     team_members TEXT DEFAULT '[]',
     tech_stack TEXT DEFAULT '[]',
     checklist TEXT DEFAULT '[]',
+    repo_url TEXT DEFAULT '',
+    figma_url TEXT DEFAULT '',
+    devpost_url TEXT DEFAULT '',
+    submission_url TEXT DEFAULT '',
+    submission_notes TEXT DEFAULT '',
+    submitted_at TEXT,
+    presentation_url TEXT DEFAULT '',
+    judging_criteria_raw TEXT DEFAULT '[]',
+    prizes_targeted TEXT DEFAULT '[]',
     created_at TEXT DEFAULT (datetime('now','localtime')),
     updated_at TEXT DEFAULT (datetime('now','localtime'))
   );
@@ -45,6 +57,60 @@ db.exec(`
     PRIMARY KEY (project_id, idea_id),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (idea_id) REFERENCES ideas(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS team_roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    member_name TEXT NOT NULL,
+    role TEXT DEFAULT '',
+    responsibilities TEXT DEFAULT '',
+    contact TEXT DEFAULT '',
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS resource_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL,
+    category TEXT DEFAULT 'other',
+    notes TEXT DEFAULT '',
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS judging_criteria_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    weight INTEGER DEFAULT 1,
+    max_score INTEGER DEFAULT 10,
+    self_score INTEGER,
+    judge_feedback TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS retrospectives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL UNIQUE,
+    went_well TEXT DEFAULT '',
+    went_wrong TEXT DEFAULT '',
+    learned TEXT DEFAULT '',
+    next_time TEXT DEFAULT '',
+    continue_project INTEGER DEFAULT 0,
+    overall_rating INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS project_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    occurred_at TEXT NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS idea_scores (
@@ -173,6 +239,29 @@ db.exec(`
     date TEXT NOT NULL UNIQUE
   );
 `);
+
+// Migration: add new columns if missing (previously created databases)
+const migrateProjects = db.prepare("PRAGMA table_info('projects')").all();
+const existingCols = migrateProjects.map(c => c.name);
+const newCols = [
+  ['hackathon_name', "TEXT DEFAULT ''"],
+  ['theme', "TEXT DEFAULT ''"],
+  ['start_time', 'TEXT'],
+  ['repo_url', "TEXT DEFAULT ''"],
+  ['figma_url', "TEXT DEFAULT ''"],
+  ['devpost_url', "TEXT DEFAULT ''"],
+  ['submission_url', "TEXT DEFAULT ''"],
+  ['submission_notes', "TEXT DEFAULT ''"],
+  ['submitted_at', 'TEXT'],
+  ['presentation_url', "TEXT DEFAULT ''"],
+  ['judging_criteria_raw', "TEXT DEFAULT '[]'"],
+  ['prizes_targeted', "TEXT DEFAULT '[]'"],
+];
+for (const [col, def] of newCols) {
+  if (!existingCols.includes(col)) {
+    try { db.exec(`ALTER TABLE projects ADD COLUMN ${col} ${def}`); } catch {}
+  }
+}
 
 // Seed inspirations if empty
 const count = db.prepare('SELECT COUNT(*) as c FROM inspirations').get();
