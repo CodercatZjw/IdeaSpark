@@ -4,6 +4,8 @@ const links = [
   { to: '/', label: '仪表盘' },
   { to: '/write', label: '写想法' },
   { to: '/history', label: '历史' },
+  { to: '/projects', label: '项目' },
+  { to: '/graph', label: '图谱' },
   { to: '/inspiration', label: '灵感库' },
 ];
 

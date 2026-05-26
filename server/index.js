@@ -10,6 +10,8 @@ app.use(express.json());
 
 app.use('/api/ideas', require('./routes/ideas'));
 app.use('/api/inspiration', require('./routes/inspirations'));
+app.use('/api/projects', require('./routes/projects'));
+app.use('/api/graph', require('./routes/graph'));
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

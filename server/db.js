@@ -25,6 +25,27 @@ db.exec(`
     content TEXT NOT NULL,
     category TEXT DEFAULT 'tech'
   );
+
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    deadline TEXT,
+    status TEXT DEFAULT 'planning',
+    team_members TEXT DEFAULT '[]',
+    tech_stack TEXT DEFAULT '[]',
+    checklist TEXT DEFAULT '[]',
+    created_at TEXT DEFAULT (datetime('now','localtime')),
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS project_ideas (
+    project_id INTEGER NOT NULL,
+    idea_id INTEGER NOT NULL,
+    PRIMARY KEY (project_id, idea_id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (idea_id) REFERENCES ideas(id) ON DELETE CASCADE
+  );
 `);
 
 // Seed inspirations if empty

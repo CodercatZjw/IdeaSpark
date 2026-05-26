@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchIdeas, fetchRandomInspiration } from '../api';
+import CombinationEngine from '../components/CombinationEngine';
 
 export default function Dashboard() {
   const [todayIdeas, setTodayIdeas] = useState([]);
@@ -61,6 +62,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Combination Engine */}
+      <CombinationEngine />
 
       {/* Today's Ideas */}
       <div className="card">

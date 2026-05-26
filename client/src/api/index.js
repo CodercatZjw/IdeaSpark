@@ -57,3 +57,51 @@ export async function addInspiration(data) {
   });
   return res.json();
 }
+
+// --- Projects ---
+
+export async function fetchProjects() {
+  const res = await fetch(`${BASE}/projects`);
+  return res.json();
+}
+
+export async function fetchProject(id) {
+  const res = await fetch(`${BASE}/projects/${id}`);
+  return res.json();
+}
+
+export async function createProject(data) {
+  const res = await fetch(`${BASE}/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+export async function updateProject(id, data) {
+  await fetch(`${BASE}/projects/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProject(id) {
+  await fetch(`${BASE}/projects/${id}`, { method: 'DELETE' });
+}
+
+export async function updateChecklist(id, checklist) {
+  await fetch(`${BASE}/projects/${id}/checklist`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ checklist }),
+  });
+}
+
+// --- Graph ---
+
+export async function fetchGraph() {
+  const res = await fetch(`${BASE}/graph`);
+  return res.json();
+}

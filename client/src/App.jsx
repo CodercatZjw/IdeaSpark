@@ -3,6 +3,8 @@ import Dashboard from './pages/Dashboard';
 import WriteIdea from './pages/WriteIdea';
 import History from './pages/History';
 import InspirationLib from './pages/InspirationLib';
+import Projects from './pages/Projects';
+import Graph from './pages/Graph';
 import Navbar from './components/Navbar';
 
 function BackgroundSystem() {
@@ -31,6 +33,8 @@ export default function App() {
           <Route path="/write/:id" element={<WriteIdea />} />
           <Route path="/history" element={<History />} />
           <Route path="/inspiration" element={<InspirationLib />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/graph" element={<Graph />} />
         </Routes>
       </main>
     </BrowserRouter>
