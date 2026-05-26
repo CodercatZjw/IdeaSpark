@@ -5,6 +5,9 @@ import History from './pages/History';
 import InspirationLib from './pages/InspirationLib';
 import Projects from './pages/Projects';
 import Graph from './pages/Graph';
+import Snippets from './pages/Snippets';
+import Tools from './pages/Tools';
+import PitchTimer from './pages/PitchTimer';
 import Navbar from './components/Navbar';
 
 function BackgroundSystem() {
@@ -35,6 +38,9 @@ export default function App() {
           <Route path="/inspiration" element={<InspirationLib />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/graph" element={<Graph />} />
+          <Route path="/snippets" element={<Snippets />} />
+          <Route path="/tools" element={<Tools />} />
+          <Route path="/pitch" element={<PitchTimer />} />
         </Routes>
       </main>
     </BrowserRouter>

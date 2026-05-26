@@ -6,6 +6,9 @@ const links = [
   { to: '/history', label: '历史' },
   { to: '/projects', label: '项目' },
   { to: '/graph', label: '图谱' },
+  { to: '/snippets', label: '代码' },
+  { to: '/tools', label: '工具' },
+  { to: '/pitch', label: '路演' },
   { to: '/inspiration', label: '灵感库' },
 ];
 

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchIdeas, fetchRandomInspiration } from '../api';
 import CombinationEngine from '../components/CombinationEngine';
+import ChallengeCard from '../components/ChallengeCard';
+import DailyWord from '../components/DailyWord';
+import StreakWidget from '../components/StreakWidget';
 
 export default function Dashboard() {
   const [todayIdeas, setTodayIdeas] = useState([]);
@@ -43,25 +46,34 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Inspiration Cards */}
-      {inspo && (
-        <div className="grid-2" style={{ marginBottom: 32 }}>
-          <div className="inspiration-card">
-            <p className="section-label">关键词组合</p>
-            <div style={{ marginTop: 8 }}>
-              {inspo.keywords.map(k => (
-                <span key={k.id} className="keyword-badge">{k.content}</span>
-              ))}
+      {/* Streak */}
+      <StreakWidget />
+
+      <div style={{ marginTop: 20 }} />
+
+      {/* Inspiration + Challenge */}
+      <div className="grid-2" style={{ marginBottom: 24 }}>
+        {inspo && (
+          <div>
+            <div className="inspiration-card" style={{ height: '100%' }}>
+              <p className="section-label">关键词组合</p>
+              <div style={{ marginTop: 8 }}>
+                {inspo.keywords.map(k => (
+                  <span key={k.id} className="keyword-badge">{k.content}</span>
+                ))}
+              </div>
+              <p className="section-label" style={{ marginTop: 16 }}>创意提示</p>
+              <p className="prompt-text" style={{ marginTop: 8 }}>
+                &ldquo;{inspo.prompts[0]?.content}&rdquo;
+              </p>
             </div>
           </div>
-          <div className="inspiration-card">
-            <p className="section-label">创意提示</p>
-            <p className="prompt-text" style={{ marginTop: 8 }}>
-              &ldquo;{inspo.prompts[0]?.content}&rdquo;
-            </p>
-          </div>
-        </div>
-      )}
+        )}
+        <ChallengeCard />
+      </div>
+
+      {/* Daily Word */}
+      <DailyWord />
 
       {/* Combination Engine */}
       <CombinationEngine />

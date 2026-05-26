@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchIdea, createIdea, updateIdea, deleteIdea } from '../api';
+import TemplateSelector from '../components/TemplateSelector';
+import ScoreMatrix from '../components/ScoreMatrix';
+import SharePanel from '../components/SharePanel';
+import IdeaHistory from '../components/IdeaHistory';
 
 export default function WriteIdea() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const [idea, setIdea] = useState(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -17,6 +22,7 @@ export default function WriteIdea() {
   useEffect(() => {
     if (isEdit) {
       fetchIdea(id).then(idea => {
+        setIdea(idea);
         setTitle(idea.title);
         setContent(idea.content);
         setDate(idea.date);
@@ -53,6 +59,11 @@ export default function WriteIdea() {
     navigate('/history');
   };
 
+  const applyTemplate = ({ title: tTitle, content: tContent }) => {
+    setTitle(tTitle);
+    setContent(tContent);
+  };
+
   return (
     <div>
       <div className="row-between" style={{ marginBottom: 32 }}>
@@ -61,6 +72,7 @@ export default function WriteIdea() {
           <h1 className="section-title">{isEdit ? '编辑想法' : '新想法'}</h1>
         </div>
         <div className="row">
+          <TemplateSelector onApply={applyTemplate} />
           {isEdit && <button className="btn btn-danger btn-sm" onClick={handleDelete}>删除</button>}
           <button className="btn btn-outline btn-sm" onClick={() => navigate(-1)}>取消</button>
         </div>
@@ -108,6 +120,15 @@ export default function WriteIdea() {
           {saving ? '保存中...' : isEdit ? '保存修改' : '记录想法'}
         </button>
       </form>
+
+      {/* Extras for edit mode */}
+      {isEdit && idea && (
+        <>
+          <ScoreMatrix ideaId={Number(id)} />
+          <IdeaHistory ideaId={Number(id)} />
+          <SharePanel type="idea" data={idea} />
+        </>
+      )}
     </div>
   );
 }

@@ -12,6 +12,13 @@ app.use('/api/ideas', require('./routes/ideas'));
 app.use('/api/inspiration', require('./routes/inspirations'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/graph', require('./routes/graph'));
+app.use('/api/scores', require('./routes/scores'));
+app.use('/api/standups', require('./routes/standups'));
+app.use('/api/blockers', require('./routes/blockers'));
+app.use('/api/snippets', require('./routes/snippets'));
+app.use('/api/api-tools', require('./routes/api-tools'));
+app.use('/api/tech-stacks', require('./routes/tech-stacks'));
+app.use('/api/more', require('./routes/more'));
 
 // Serve static frontend in production
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

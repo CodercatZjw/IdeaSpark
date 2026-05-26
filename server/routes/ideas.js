@@ -48,6 +48,10 @@ router.put('/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM ideas WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
+  // Save history before update
+  db.prepare('INSERT INTO idea_history (idea_id, title, content, tags) VALUES (?,?,?,?)')
+    .run(req.params.id, existing.title, existing.content, existing.tags);
+
   db.prepare(
     'UPDATE ideas SET title=?, content=?, date=?, tags=?, updated_at=datetime(\'now\',\'localtime\') WHERE id=?'
   ).run(
